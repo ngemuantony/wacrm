@@ -14,7 +14,7 @@
  */
 
 export const THEME_IDS = [
-  "violet",
+  "tuinnov8",
   "emerald",
   "cobalt",
   "amber",
@@ -23,9 +23,9 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "violet";
+export const DEFAULT_THEME: ThemeId = "tuinnov8";
 
-export const STORAGE_KEY = "wacrm.theme";
+export const STORAGE_KEY = "tuinnov8.theme";
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -42,10 +42,10 @@ export interface ThemeMeta {
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
-    id: "violet",
-    name: "Violet",
-    tagline: "The default — confident, slightly playful.",
-    swatch: "oklch(0.526 0.247 293)",
+    id: "tuinnov8",
+    name: "Tuinnov8",
+    tagline: "The default WhatsApp-style brand theme.",
+    swatch: "oklch(0.77 0.17 152)",
   },
   {
     id: "emerald",

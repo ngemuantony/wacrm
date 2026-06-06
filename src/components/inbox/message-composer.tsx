@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, KeyboardEvent } from "react";
-import { Send, LayoutTemplate } from "lucide-react";
+import { Send, LayoutTemplate, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
 import { useCan } from "@/hooks/use-can";
@@ -20,6 +20,7 @@ interface MessageComposerProps {
   sessionExpired: boolean;
   onSend: (text: string, replyToId?: string) => void;
   onOpenTemplates: () => void;
+  onRequestPayment: () => void;
   replyTo?: ReplyDraft | null;
   onClearReply?: () => void;
 }
@@ -29,6 +30,7 @@ export function MessageComposer({
   sessionExpired,
   onSend,
   onOpenTemplates,
+  onRequestPayment,
   replyTo,
   onClearReply,
 }: MessageComposerProps) {
@@ -84,7 +86,7 @@ export function MessageComposer({
   );
 
   return (
-    <div className="border-t border-slate-800 bg-slate-900 p-3">
+    <div className="border-t border-border bg-card/80 backdrop-blur-md shadow-lg p-3">
       {replyTo && (
         <div className="mb-2">
           <ReplyQuote
@@ -118,10 +120,22 @@ export function MessageComposer({
           canAct={!readOnly}
           gateReason="send messages"
           title={readOnly ? undefined : "Send template"}
-          className="h-9 w-9 shrink-0 p-0 text-slate-400 hover:text-white"
+          className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground"
           onClick={onOpenTemplates}
         >
           <LayoutTemplate className="h-4 w-4" />
+        </GatedButton>
+
+        <GatedButton
+          variant="ghost"
+          size="sm"
+          canAct={!readOnly}
+          gateReason="request payment"
+          title={readOnly ? undefined : "Request Payment via M-Pesa"}
+          className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-green-500"
+          onClick={onRequestPayment}
+        >
+          <Banknote className="h-4 w-4" />
         </GatedButton>
 
         <textarea
@@ -143,7 +157,7 @@ export function MessageComposer({
           // The placeholder text also surfaces the read-only state.
           title={readOnly ? "Read-only — your role can't send messages" : undefined}
           className={cn(
-            "flex-1 resize-none rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors focus:border-primary/50",
+            "flex-1 resize-none rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-foreground placeholder-slate-500 outline-none transition-colors focus:border-primary/50",
             (sessionExpired || readOnly) && "cursor-not-allowed opacity-50"
           )}
         />

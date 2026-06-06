@@ -54,6 +54,8 @@ const SECURITY_HEADERS = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  // Allow development access from local network IPs
+  allowedDevOrigins: ["10.42.0.245"],
   /**
    * Cache-Control policy.
    *

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
-import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
+import { getMediaUrl, downloadMedia, sendTextMessage, sendTypingIndicator } from '@/lib/whatsapp/meta-api'
 import { normalizePhone, phonesMatch } from '@/lib/whatsapp/phone-utils'
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-signature'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
+import { processEcommerceFlow } from '@/lib/ecommerce/flow'
 import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
@@ -264,6 +265,13 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
         const message = value.messages[i]
         const contact = value.contacts[i] || value.contacts[0]
 
+        // Fire and forget typing indicator
+        sendTypingIndicator({
+          phoneNumberId,
+          accessToken: decryptedAccessToken,
+          to: message.from
+        }).catch(err => console.error('Failed to send typing indicator:', err))
+
         await processMessage(
           message,
           contact,
@@ -274,7 +282,8 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
           // inserts that need it for NOT NULL FK compliance. Always
           // the admin who saved the WhatsApp config.
           config.user_id,
-          decryptedAccessToken
+          decryptedAccessToken,
+          phoneNumberId
         )
       }
     }
@@ -504,11 +513,11 @@ async function processMessage(
   // contact / conversation / message row created downstream is
   // stamped with this so any member of the account can see it.
   accountId: string,
-  // Sender-of-record for inserts that need a NOT NULL user_id FK
   // (contacts, conversations). Always the admin who saved the
   // WhatsApp config; the choice is arbitrary post-017 but stable.
   configOwnerUserId: string,
-  accessToken: string
+  accessToken: string,
+  phoneNumberId: string
 ) {
   const senderPhone = normalizePhone(message.from)
   const contactName = contact.profile.name
@@ -691,7 +700,21 @@ async function processMessage(
   // Content-level triggers are suppressed when a flow consumed the
   // message — see the comment block above.
   if (!flowConsumed) {
-    automationTriggers.push('new_message_received', 'keyword_match')
+    const handledByEcommerce = await processEcommerceFlow({
+      accountId,
+      contactId: contactRecord.id,
+      phoneNumberId,
+      accessToken,
+      contactPhone: contactRecord.phone,
+      userId: configOwnerUserId,
+      message,
+      interactiveReplyId,
+      inboundText
+    })
+
+    if (!handledByEcommerce) {
+      automationTriggers.push('new_message_received', 'keyword_match')
+    }
   }
   // new_contact_created fires only when the webhook just auto-created the
   // contact row. first_inbound_message fires whenever this is the contact's

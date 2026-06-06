@@ -215,6 +215,52 @@ export async function getSubscribedApps(
 // Sending
 // ============================================================
 
+export interface SendTypingIndicatorArgs {
+  phoneNumberId: string
+  accessToken: string
+  to: string
+}
+
+/**
+ * Sends a "typing..." indicator to the customer.
+ * Disappears automatically after a few seconds or when a message is sent.
+ */
+export async function sendTypingIndicator(args: SendTypingIndicatorArgs): Promise<void> {
+  const { phoneNumberId, accessToken, to } = args
+  const url = `${META_API_BASE}/${phoneNumberId}/messages`
+  const body = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to,
+    type: 'action',
+    action: 'typing_on'
+  }
+  
+  // Wait, Meta API actually uses: "type": "action", "action": "typing_on" OR "sender_action": "typing_on" ?
+  // According to modern API (v20): it's "sender_action" instead of "type" in some endpoints, or "sender_action": "typing_on" directly.
+  // Actually, let's use the official format: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "PHONE_NUMBER", "type": "reaction"? No.
+  // Standard format:
+  const standardBody = {
+    messaging_product: 'whatsapp',
+    to,
+    sender_action: 'typing_on'
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(standardBody),
+  })
+  
+  if (!response.ok) {
+    // Fire and forget; log but don't crash
+    console.warn('Failed to send typing indicator:', await response.text())
+  }
+}
+
 export interface SendTextMessageArgs {
   phoneNumberId: string
   accessToken: string
@@ -662,6 +708,8 @@ export interface SendInteractiveButtonsArgs {
   bodyText: string
   /** Optional plain-text header (≤ 60 chars). */
   headerText?: string
+  /** Optional image header (URL). Mutually exclusive with headerText. */
+  headerImage?: string
   /** Optional grey footer line under the buttons (≤ 60 chars). */
   footerText?: string
   /** 1–3 buttons. Validated against Meta's limits before sending. */
@@ -683,7 +731,7 @@ export async function sendInteractiveButtons(
 ): Promise<MetaSendResult> {
   const {
     phoneNumberId, accessToken, to,
-    bodyText, headerText, footerText, buttons, contextMessageId,
+    bodyText, headerText, headerImage, footerText, buttons, contextMessageId,
   } = args
   validateInteractiveBody(bodyText)
   validateInteractiveHeaderFooter(headerText, footerText)
@@ -712,7 +760,8 @@ export async function sendInteractiveButtons(
       })),
     },
   }
-  if (headerText) interactive.header = { type: 'text', text: headerText }
+  if (headerImage) interactive.header = { type: 'image', image: { link: headerImage } }
+  else if (headerText) interactive.header = { type: 'text', text: headerText }
   if (footerText) interactive.footer = { text: footerText }
 
   const body: Record<string, unknown> = {

@@ -8,6 +8,8 @@ import {
   User,
   Palette,
   UsersRound,
+  Shield,
+  MessageCircleQuestion,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
@@ -18,6 +20,8 @@ import { PasswordForm } from '@/components/settings/password-form';
 import { SessionsCard } from '@/components/settings/sessions-card';
 import { AppearancePanel } from '@/components/settings/appearance-panel';
 import { MembersTab } from '@/components/settings/members-tab';
+import { IntegrationsTab } from '@/components/settings/integrations-tab';
+import { SurveysTab } from '@/components/settings/surveys-tab';
 
 const TAB_VALUES = [
   'profile',
@@ -26,6 +30,8 @@ const TAB_VALUES = [
   'tags',
   'appearance',
   'members',
+  'integrations',
+  'surveys',
 ] as const;
 type TabValue = (typeof TAB_VALUES)[number];
 
@@ -53,56 +59,70 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Manage your profile, WhatsApp® integration, message templates, and
           tags.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => onChange(v as TabValue)}>
-        <TabsList className="bg-slate-900 border border-slate-700">
+        <TabsList className="bg-card/80 backdrop-blur-md shadow-lg border border-border">
           <TabsTrigger
             value="profile"
-            className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
           >
             <User className="size-4" />
             Profile
           </TabsTrigger>
           <TabsTrigger
             value="whatsapp"
-            className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
           >
             <Settings className="size-4" />
             WhatsApp Config
           </TabsTrigger>
           <TabsTrigger
             value="templates"
-            className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
           >
             <MessageSquare className="size-4" />
             Templates
           </TabsTrigger>
           <TabsTrigger
             value="tags"
-            className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
           >
             <Tag className="size-4" />
             Tags
           </TabsTrigger>
           <TabsTrigger
             value="appearance"
-            className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
           >
             <Palette className="size-4" />
             Appearance
           </TabsTrigger>
           <TabsTrigger
             value="members"
-            className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
           >
             <UsersRound className="size-4" />
             Members
+          </TabsTrigger>
+          <TabsTrigger
+            value="integrations"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+          >
+            <Shield className="size-4" />
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger
+            value="surveys"
+            className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+          >
+            <MessageCircleQuestion className="size-4" />
+            Surveys
           </TabsTrigger>
         </TabsList>
 
@@ -130,6 +150,14 @@ export default function SettingsPage() {
 
         <TabsContent value="members">
           <MembersTab />
+        </TabsContent>
+
+        <TabsContent value="integrations">
+          <IntegrationsTab />
+        </TabsContent>
+
+        <TabsContent value="surveys">
+          <SurveysTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -7,6 +7,7 @@ import {
   UserPlus,
   DollarSign,
   Send,
+  CreditCard,
 } from 'lucide-react'
 
 import {
@@ -15,6 +16,7 @@ import {
   loadMetrics,
   loadPipelineDonut,
   loadResponseTime,
+  loadBroadcastMetrics,
 } from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
@@ -31,6 +33,7 @@ import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
+import { BroadcastAnalyticsChart } from '@/components/dashboard/broadcast-analytics-chart'
 
 type RangeDays = 7 | 30 | 90
 
@@ -54,6 +57,9 @@ export default function DashboardPage() {
 
   const [responseTime, setResponseTime] = useState<ResponseTimeSummary | null>(null)
   const [responseTimeLoading, setResponseTimeLoading] = useState(true)
+
+  const [broadcastData, setBroadcastData] = useState<any[] | null>(null)
+  const [broadcastLoading, setBroadcastLoading] = useState(true)
 
   const [activity, setActivity] = useState<ActivityItem[] | null>(null)
   const [activityLoading, setActivityLoading] = useState(true)
@@ -83,6 +89,11 @@ export default function DashboardPage() {
       .then((r) => setResponseTime(r))
       .catch((err) => console.error('[dashboard] response time failed:', err))
       .finally(() => setResponseTimeLoading(false))
+
+    void loadBroadcastMetrics(db)
+      .then((b) => setBroadcastData(b))
+      .catch((err) => console.error('[dashboard] broadcast metrics failed:', err))
+      .finally(() => setBroadcastLoading(false))
 
     // Fetch up to 50 so the biggest page-size option in the feed
     // (50 rows) is already in memory — switching sizes then becomes
@@ -119,8 +130,8 @@ export default function DashboardPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Live analytics across conversations, contacts, deals, broadcasts, and automations.
         </p>
       </div>
@@ -164,11 +175,22 @@ export default function DashboardPage() {
               value={metrics.messagesSentToday.current.toLocaleString()}
               icon={Send}
               delta={{
-                sign:
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
+                sign: metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
                 label: deltaLabel(
                   metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
                   'vs yesterday',
+                ),
+              }}
+            />
+            <MetricCard
+              title="Transactions Revenue Today"
+              icon={CreditCard}
+              value={`KES ${metrics.transactionsRevenueToday.toLocaleString()}`}
+              delta={{
+                sign: metrics.transactionsToday.current - metrics.transactionsToday.previous,
+                label: deltaLabel(
+                  metrics.transactionsToday.current - metrics.transactionsToday.previous,
+                  'completed txns vs yesterday',
                 ),
               }}
             />
@@ -200,8 +222,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Response time */}
-      <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
+        <BroadcastAnalyticsChart data={broadcastData} loading={broadcastLoading} />
+      </div>
 
       {/* Activity feed */}
       <ActivityFeed items={activity} loading={activityLoading} />

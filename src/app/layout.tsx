@@ -13,8 +13,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "Tuinnov8WaCRM",
+    template: "%s — Tuinnov8WaCRM",
   },
   description: "Self-hostable CRM template for WhatsApp.",
   robots: {
@@ -32,8 +32,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
-  colorScheme: "dark",
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 // Inline boot script — runs before React hydrates so the user's

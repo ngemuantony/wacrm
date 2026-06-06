@@ -42,6 +42,8 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     openDeals,
     messagesToday,
     messagesYesterday,
+    transactionsToday,
+    transactionsYesterday,
   ] = await Promise.all([
     db.from('conversations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db
@@ -73,10 +75,24 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       .eq('sender_type', 'agent')
       .gte('created_at', yesterdayStart)
       .lt('created_at', todayStart),
+    db
+      .from('mpesa_transactions')
+      .select('amount', { count: 'exact' })
+      .eq('status', 'completed')
+      .gte('created_at', todayStart),
+    db
+      .from('mpesa_transactions')
+      .select('amount', { count: 'exact' })
+      .eq('status', 'completed')
+      .gte('created_at', yesterdayStart)
+      .lt('created_at', todayStart),
   ])
 
   const openDealsRows = (openDeals.data ?? []) as { value: number | null }[]
   const openDealsValue = openDealsRows.reduce((sum, d) => sum + (d.value ?? 0), 0)
+
+  const transactionsTodayData = (transactionsToday.data ?? []) as { amount: number }[]
+  const transactionsRevenueToday = transactionsTodayData.reduce((sum, t) => sum + t.amount, 0)
 
   return {
     activeConversations: {
@@ -96,6 +112,11 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       current: messagesToday.count ?? 0,
       previous: messagesYesterday.count ?? 0,
     },
+    transactionsToday: {
+      current: transactionsToday.count ?? 0,
+      previous: transactionsYesterday.count ?? 0,
+    },
+    transactionsRevenueToday,
   }
 }
 
@@ -129,6 +150,28 @@ export async function loadConversationsSeries(
 }
 
 // --- 3. Pipeline donut -------------------------------------------------
+
+export async function loadBroadcastMetrics(db: DB): Promise<any[]> {
+  const thirtyDaysAgo = daysAgoStart(30).toISOString()
+  const { data, error } = await db
+    .from('broadcasts')
+    .select('name, sent_count, delivered_count, read_count, created_at')
+    .gte('created_at', thirtyDaysAgo)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  // We map them to a format suitable for the area chart
+  return (data ?? []).map(b => ({
+    name: b.name.substring(0, 15) + (b.name.length > 15 ? '...' : ''),
+    date: new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    sent: b.sent_count,
+    delivered: b.delivered_count,
+    read: b.read_count
+  }))
+}
+
+// --- 4. Pipeline donut -------------------------------------------------
 
 export async function loadPipelineDonut(db: DB): Promise<PipelineDonutData> {
   const [stagesRes, dealsRes] = await Promise.all([
